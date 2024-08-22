@@ -1,5 +1,4 @@
 using Foundation;
-using Microsoft.Extensions.Logging;
 using Photos;
 using PhotosUI;
 using UIKit;
@@ -23,66 +22,52 @@ public class ImagePickerService : NSObject, IImagePickerService, IPHPickerViewCo
             _tcs.SetResult(Stream.Null);
             return await _tcs.Task;
         }
-
-        if (OperatingSystem.IsIOSVersionAtLeast(14))
+        
+        _imagePickerController = new UIImagePickerController
         {
-            var readWriteStatus = PHPhotoLibrary.GetAuthorizationStatus(PHAccessLevel.ReadWrite);
+            AllowsEditing = false,
+#pragma warning disable CA1422
+            SourceType = UIImagePickerControllerSourceType.PhotoLibrary,
+            MediaTypes = UIImagePickerController.AvailableMediaTypes(UIImagePickerControllerSourceType.PhotoLibrary)
+#pragma warning restore CA1422
+        };
 
-            PHPhotoLibrary.RequestAuthorization(PHAccessLevel.ReadWrite, status =>
-            {
-                switch (status)
-                {
-                    case PHAuthorizationStatus.NotDetermined:
-                        break;
-                    case PHAuthorizationStatus.Restricted:
-                        break;
-                    case PHAuthorizationStatus.Denied:
-                        break;
-                    case PHAuthorizationStatus.Authorized:
-                        break;
-                    case PHAuthorizationStatus.Limited:
-                        if (!OperatingSystem.IsIOSVersionAtLeast(14))
-                        {
-                            return;
-                        }
-                        
-                        BeginInvokeOnMainThread(() => PHPhotoLibrary.SharedPhotoLibrary.PresentLimitedLibraryPicker(viewController,
-                            strings =>
-                            {
-                                foreach (var identifiers in strings)
-                                {
-                                    Console.WriteLine(identifiers);
-                                }
-                            }));
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(status), status, null);
-                }
-            });
-            
-            
-
-            var filter = PHPickerFilter.ImagesFilter;
-            var picker = new PHPickerViewController(new PHPickerConfiguration(PHPhotoLibrary.SharedPhotoLibrary)
-            {
-                Filter = filter
-            });
-            picker.Delegate = this;
-            viewController.PresentViewController(picker, true, null);
-        }
-        else
-        {
-            _imagePickerController = new UIImagePickerController
-            {
-                AllowsEditing = false,
-                SourceType = UIImagePickerControllerSourceType.PhotoLibrary,
-                MediaTypes = UIImagePickerController.AvailableMediaTypes(UIImagePickerControllerSourceType.PhotoLibrary)
-            };
-
-            _imagePickerController.FinishedPickingMedia += ImagePickerController_FinishedPickingMedia;
-        }
+        _imagePickerController.FinishedPickingMedia += ImagePickerController_FinishedPickingMedia;
+        
+        viewController.PresentViewController(_imagePickerController, true, null);
 
         return await _tcs.Task;
+    }
+
+    public async Task<Stream> PickPhotoAsync()
+    {
+        _tcs = new TaskCompletionSource<Stream>();
+        
+        var viewController = UIApplication.SharedApplication.GetCurrentViewController();
+        if (viewController is null)
+        {
+            _tcs.SetResult(Stream.Null);
+            return await _tcs.Task;
+        }
+        
+        OpenPhotoPicker(viewController);
+        return await _tcs.Task;
+    }
+
+    private void OpenPhotoPicker(UIViewController attachTo)
+    {
+        if (!OperatingSystem.IsIOSVersionAtLeast(14))
+        {
+            return;
+        }
+        
+        var filter = PHPickerFilter.ImagesFilter;
+        var picker = new PHPickerViewController(new PHPickerConfiguration(PHPhotoLibrary.SharedPhotoLibrary)
+        {
+            Filter = filter
+        });
+        picker.Delegate = this;
+        attachTo.PresentViewController(picker, true, null);
     }
 
     private void ImagePickerController_FinishedPickingMedia(object? sender, UIImagePickerMediaPickedEventArgs eventArgs)

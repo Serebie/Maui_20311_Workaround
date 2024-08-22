@@ -10,9 +10,21 @@ public partial class MainPage : ContentPage
         InitializeComponent();
     }
 
-    private async void OnCounterClicked(object sender, EventArgs e)
+    private async void OnPickImageClicked(object sender, EventArgs e)
     {
         var stream = await _imagePickerService.PickImageAsync();
+        if (stream == Stream.Null)
+        {
+            return;
+        }
+
+        var imageSource = ImageSource.FromStream(() => stream);
+        SelectedImage.Source = imageSource;
+    }
+    
+    private async void OnPickPhotoClicked(object sender, EventArgs e)
+    {
+        var stream = await _imagePickerService.PickPhotoAsync();
         if (stream == Stream.Null)
         {
             return;
