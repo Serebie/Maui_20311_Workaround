@@ -15,13 +15,18 @@
                 SemanticProperties.Description="dot net bot in a race car number eight" />
 
             <Button
-                Text="Pick image (old)" 
+                Text="Pick image (UIImagePickerController)" 
                 Clicked="OnPickImageClicked"
                 HorizontalOptions="Fill" />
             
             <Button
-                Text="Pick photo (new)" 
+                Text="Pick photo (PHPickerViewController)" 
                 Clicked="OnPickPhotoClicked"
+                HorizontalOptions="Fill" />
+            
+            <Button
+                Text="Pick photo (MediaPicker)" 
+                Clicked="OnMediaPickerClicked"
                 HorizontalOptions="Fill" />
         </VerticalStackLayout>
     </ScrollView>

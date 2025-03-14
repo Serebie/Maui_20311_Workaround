@@ -1,6 +1,6 @@
 ﻿namespace Maui_20311_Workaround;
 
-public partial class App : Application
+public partial class App
 {
     public App()
     {
